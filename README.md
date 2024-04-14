@@ -36,6 +36,8 @@ Cada arquivo `.csv` foi criado de acordo com seu nome original onde dentro do c�
 
 As tabelas foram criadas com `USING DELTA` e com `LOCATION` sendo apontado para a Azure (uma fonte 'externa'), como vantagem de criarmos as tabelas dentro do catálogo da `Datum` (assim chamado no projeto) podemos criar o database `silver` e as tabelas dentro dele, para um uso mais simplificado na camada gold. Não foi utilizado o `PARTITIONED BY` nessa etapa por não ter sido identificado a necessidade de uma consulta rápida e sim a gravação.
 
+Foi adicionado recentemente uma lib para salvar no delta com segurança adicionando a coluna `dat_ref_carga` que tem por finalidade o controle da data de carga, a ideia é com essa informação futuramente cortar a necessidade de processamento do arquivo caso não tenha alterações e o mover o blob storage configurado como cold (usando dbutils.fs.mv) e claro renomeando o arquivo com a data que ele foi processado.
+
 ---
 # 5. Gold
 
@@ -51,24 +53,25 @@ Com as tabelas já criadas na silver basta chamarmos elas usando ```spark.table(
     - 1: Agrupamento do valor vendido pelo dia da semana
     - 2: Agrupamento do valor vendido por mês
     - 3: Agrupamento do valor vendido por estado
+- VENDEDORES: retorna uma tabela informando o tal vendido por vendedor, cidade, estado e também junto com ele a categorização do frete e como estão as entregar para aquele vendedor.
 
 ---
 # 6. Orquestração
 
 Por questão de tempo foi selecionado o Workflow do próprio Databricks para realizar a orquestração dos notebooks e processo, onde basicamente temos a camada bronze composta para API de extração dos csvs e após sua conclusão o ínicio do processamento de todos os arquivos para delta tables dentro unity catalog disponibilizando essas tabelas para consultas (caso necessário) e por fim o uso das tabelas na camada gold para análises iniciais com um agendamento semanal toda segunda conforme a imagem abaixo:
 
-![image](https://github.com/MatheusFBasso/OLIST_KAGGLE_DATASET/assets/62318283/fa3215f1-b5b9-46e0-84de-671f9cba5c58)
+![image](https://github.com/MatheusFBasso/OLIST_KAGGLE_DATASET/assets/62318283/357449a3-3a3d-468f-bfe6-c23a0c19ea2f)
 
-![image](https://github.com/MatheusFBasso/OLIST_KAGGLE_DATASET/assets/62318283/e15741a5-2e12-4d66-a745-fc6628a54afb)
 
 ---
 # 7. Visualização
 
 Novamente foi selecionada a solução da Databricks para o problema, onde foi utilizado o Dashboards (muito similar o uso ao Metabase na questão de podermos gerar os dados para os gráficos através de queries), criando um para apresentar todas as tabelas criadas na camada gold conforme a as duas imagens abaixo:
 
-![image](https://github.com/MatheusFBasso/OLIST_KAGGLE_DATASET/assets/62318283/59ede0bc-0d30-4dd5-a001-11b656b75095)
+![dash_1](https://github.com/MatheusFBasso/OLIST_KAGGLE_DATASET/assets/62318283/042f911d-25f6-4c91-9a90-9e01dd4f97ab)
 
-![image](https://github.com/MatheusFBasso/OLIST_KAGGLE_DATASET/assets/62318283/ec7c3ae6-0365-4cdf-b908-967238219d0b)
+![dash_2](https://github.com/MatheusFBasso/OLIST_KAGGLE_DATASET/assets/62318283/684a9912-5fda-446d-9cec-20e8564dfa52)
+
 
 ---
 # 8. Considerações
